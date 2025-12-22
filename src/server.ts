@@ -1,6 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { addExpenseTool } from "./tools/addExpense.js";
+import { listExpenseTool } from "./tools/listExpense.js";
 
 // Create server instance
 const server = new McpServer({
@@ -9,7 +10,7 @@ const server = new McpServer({
 });
 
 //register all tool
-const tools = [addExpenseTool];
+const tools = [addExpenseTool, listExpenseTool];
 
 tools.forEach((tool) => {
   server.registerTool(
@@ -27,7 +28,7 @@ async function main() {
   try {
     const transport = new StdioServerTransport();
     await server.connect(transport);
-    console.log("Server is running...");
+    console.error("Server is running...");
   } catch (error) {
     console.error("Error starting server:", error);
     process.exit(1);

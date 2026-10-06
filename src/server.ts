@@ -1,38 +1,28 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { addExpenseTool } from "./tools/addExpense.js";
-import { listExpenseTool } from "./tools/listExpense.js";
+import { createServer } from "./mcpServer.js";
+import { startHttpServer } from "./http.js";
 
-// Create server instance
-const server = new McpServer({
-  name: "TrackMySpend",
-  version: "1.0.0",
-});
-
-//register all tool
-const tools = [addExpenseTool, listExpenseTool];
-
-tools.forEach((tool) => {
-  server.registerTool(
-    tool.name,
-    {
-      description: tool.description,
-      inputSchema: tool.inputSchema,
-    },
-    tool.handler
-  );
-});
-
-// running the server
+// stdio (default): used by Claude Desktop and other local AI clients
+// --http: Streamable HTTP, used by the TrackMySpend web app
 async function main() {
-  try {
-    const transport = new StdioServerTransport();
-    await server.connect(transport);
-    console.error("Server is running...");
-  } catch (error) {
-    console.error("Error starting server:", error);
-    process.exit(1);
+  const useHttp =
+    process.argv.includes("--http") || process.env.MCP_TRANSPORT === "http";
+
+  if (useHttp) {
+    startHttpServer({
+      host: process.env.HOST || "127.0.0.1",
+      port: Number(process.env.PORT) || 3001,
+      authToken: process.env.MCP_AUTH_TOKEN || undefined,
+    });
+    return;
   }
+
+  const server = createServer();
+  await server.connect(new StdioServerTransport());
+  console.error("TrackMySpend MCP server running on stdio");
 }
 
-main();
+main().catch((error) => {
+  console.error("Error starting server:", error);
+  process.exit(1);
+});
